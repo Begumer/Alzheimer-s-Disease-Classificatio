@@ -1,0 +1,74 @@
+import os
+import numpy as np
+from os import listdir
+from PIL import Image
+from numpy import genfromtxt
+from numpy import asarray
+import csv
+arr=[]
+with open("field_3planelocalizer_3_01_2023.csv", 'r') as file:
+  csvreader = csv.reader(file)
+  for row in csvreader:
+    arr.append(row)
+
+data_label=np.zeros(1)
+datum_label=np.zeros((1,1))
+datum_label=datum_label[0]
+#data_label = np.expand_dims(data_label, axis=0)
+#print(data_label.shape)
+#print(datum_label)
+temp = np.zeros(shape=(1,224,224))
+from os.path import isfile, join
+
+for images in os.listdir():
+    # check if the image ends with png
+    if (images.endswith(".png")):
+        #print(images)
+        im=Image.open(images)
+        data = asarray(im)
+        #create Pillow image
+        image2 = Image.fromarray(data)
+        resized_image = image2.resize((224,224))
+        image_array = np.array(resized_image)
+        #print(len(arr))
+
+        if(image_array.shape!=(224,224)):
+          print("boyut uyuşmuyor",images)
+        else:
+            for k in range(1,len(arr)):
+              #print(k)
+              #images = images[5:15] #substring ile subject sütunundaki isim gibi çevrilen görüntü ismi kısaltıldı
+              #print('images',images[5:15])
+              #print('arr[k][1]',arr[k][1])
+              if images[5:15] == (arr[k][1]): #1. sütun görüntü adı
+                label = (arr[k][2]) #ikinci sütun etiketlerin olduğu yer
+                if(label.find('CN')!=-1):
+                  datum_label[0]=1
+                if(label.find('MCI')!=-1):
+                  datum_label[0]=2
+                if(label.find('AD')!=-1):
+                  datum_label[0]=3
+
+                print(label,datum_label)
+                print(data_label.shape)
+                print(datum_label.shape)
+              
+                #datum_label=np.zeros((1,1))
+                data_label = np.concatenate((data_label,datum_label),axis=0)
+                datum_label=np.zeros(1)
+                image_array = np.expand_dims(resized_image, axis=0)
+
+                temp=np.concatenate((temp, image_array), axis=0)
+                print("images", images)
+                print("data_label",data_label)
+
+temp=temp[1:,:] 
+#data_label=data_label[1:,:] 
+#data_label.pop(0)      
+data_label=np.delete(data_label, 0)
+data_label = np.expand_dims(data_label, axis=1)
+
+np.save("resized_images",temp)
+np.save("data_label",data_label)
+print(temp.shape)
+print(data_label.shape)
